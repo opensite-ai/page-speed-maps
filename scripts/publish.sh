@@ -2,45 +2,30 @@
 
 set -e
 
-# Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-echo -e "${YELLOW}Publishing @page-speed/venn-diagram...${NC}"
+echo -e "${YELLOW}Publishing @page-speed/maps...${NC}"
 
-# Check git is clean
 if ! git diff-index --quiet HEAD --; then
-  echo -e "${RED}Error: Uncommitted changes in working directory${NC}"
+  echo -e "${RED}Error: uncommitted changes in working directory${NC}"
   exit 1
 fi
 
-# Run all checks
-echo -e "${YELLOW}Running checks...${NC}"
-pnpm run lint
-pnpm run type-check
-pnpm run test
+echo -e "${YELLOW}Running prepublish checks...${NC}"
+pnpm run prepublish
 
-# Build
-echo -e "${YELLOW}Building...${NC}"
-pnpm run build
-
-# Verify bundle sizes
 echo -e "${YELLOW}Bundle sizes:${NC}"
-ls -lh dist/esm/index.js || true
-ls -lh dist/cjs/index.js || true
+pnpm run bundle-analysis
 
-# Get version from package.json
 VERSION=$(node -p "require('./package.json').version")
 
-# Publish (expects NPM_TOKEN to be set in the environment)
 echo -e "${YELLOW}Publishing version ${VERSION} to npm...${NC}"
 npm publish
 
-# Create git tag
-git tag -a v${VERSION} -m "Release: @page-speed/venn-diagram v${VERSION}"
+git tag -a v${VERSION} -m "Release: @page-speed/maps v${VERSION}"
 git push origin v${VERSION}
 
 echo -e "${GREEN}Successfully published v${VERSION}!${NC}"
-

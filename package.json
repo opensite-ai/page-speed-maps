@@ -1,91 +1,112 @@
 {
   "name": "@page-speed/maps",
-  "version": "0.0.1",
-  "description": "TODO",
-  "author": "DashTrack Team",
-  "license": "MIT",
+  "version": "0.1.0",
+  "description": "Performance-optimized MapLibre React components and style utilities for DashTrack.",
+  "keywords": [
+    "react",
+    "maplibre",
+    "maps",
+    "stadia",
+    "page-speed",
+    "tree-shakable",
+    "dashtrack"
+  ],
+  "homepage": "https://github.com/opensite-ai/page-speed-maps#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/opensite-ai/page-speed-maps"
+    "url": "git+https://github.com/opensite-ai/page-speed-maps.git"
   },
   "bugs": {
     "url": "https://github.com/opensite-ai/page-speed-maps/issues"
   },
-  "homepage": "https://github.com/opensite-ai/page-speed-maps#readme",
-  "main": "./dist/cjs/index.js",
-  "module": "./dist/esm/index.js",
-  "types": "./dist/esm/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/esm/index.d.ts",
-      "import": "./dist/esm/index.js",
-      "require": "./dist/cjs/index.js"
-    }
-  },
+  "author": "OpenSite AI (https://opensite.ai)",
+  "license": "MIT",
+  "private": false,
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
   "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./core": {
+      "types": "./dist/core/index.d.ts",
+      "import": "./dist/core/index.js",
+      "require": "./dist/core/index.cjs"
+    },
+    "./core/map-libre": {
+      "types": "./dist/core/MapLibre.d.ts",
+      "import": "./dist/core/MapLibre.js",
+      "require": "./dist/core/MapLibre.cjs"
+    },
+    "./utils": {
+      "types": "./dist/utils/index.d.ts",
+      "import": "./dist/utils/index.js",
+      "require": "./dist/utils/index.cjs"
+    },
+    "./utils/style-url": {
+      "types": "./dist/utils/getMapLibreStyleUrl.d.ts",
+      "import": "./dist/utils/getMapLibreStyleUrl.js",
+      "require": "./dist/utils/getMapLibreStyleUrl.cjs"
+    },
+    "./utils/google-links": {
+      "types": "./dist/utils/googleMapLinks.d.ts",
+      "import": "./dist/utils/googleMapLinks.js",
+      "require": "./dist/utils/googleMapLinks.cjs"
+    },
+    "./types": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/types/index.js",
+      "require": "./dist/types/index.cjs"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest",
+    "test:ci": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "type-check": "tsc --noEmit",
+    "bundle-analysis": "node scripts/analyze-bundle.mjs",
+    "prepublish": "pnpm run build && pnpm run type-check && pnpm run test:ci",
+    "prepublishOnly": "pnpm run prepublish"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  },
   "dependencies": {
-    "@babel/runtime": "^7.23.0",
     "maplibre-gl": "^5.18.0",
     "react-map-gl": "^8.1.0"
   },
-  "peerDependencies": {
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0"
-  },
   "devDependencies": {
-    "@babel/core": "^7.23.0",
-    "@babel/plugin-transform-runtime": "^7.23.0",
-    "@babel/preset-env": "^7.23.0",
-    "@babel/preset-react": "^7.23.0",
-    "@babel/preset-typescript": "^7.23.0",
-    "@rollup/plugin-babel": "^6.0.0",
-    "@rollup/plugin-commonjs": "^25.0.0",
-    "@rollup/plugin-node-resolve": "^15.0.0",
-    "@rollup/plugin-typescript": "^11.0.0",
-    "@storybook/addon-essentials": "^7.4.0",
-    "@storybook/react": "^7.4.0",
-    "@testing-library/jest-dom": "^6.0.0",
-    "@testing-library/react": "^14.0.0",
-    "@types/node": "^20.0.0",
-    "@types/react": "^18.0.0",
-    "@types/react-dom": "^18.0.0",
-    "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "@typescript-eslint/parser": "^6.0.0",
-    "eslint": "^8.0.0",
-    "jest": "^29.0.0",
-    "jest-environment-jsdom": "^29.0.0",
-    "rollup": "^3.28.0",
-    "storybook": "^7.4.0",
-    "typescript": "^5.2.0"
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
+    "@types/node": "^24.10.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitest/coverage-v8": "^4.0.10",
+    "jsdom": "^27.2.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.7.2",
+    "vitest": "^4.0.10"
   },
-  "scripts": {
-    "build": "rollup -c",
-    "build:watch": "rollup -c --watch",
-    "dev": "pnpm run build:watch",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
-    "lint": "eslint src --ext .ts,.tsx",
-    "lint:fix": "eslint src --ext .ts,.tsx --fix",
-    "storybook": "storybook dev -p 6006",
-    "storybook:build": "storybook build",
-    "type-check": "tsc --noEmit",
-    "prepublish": "pnpm run build && pnpm run type-check && pnpm run test"
-  },
-  "keywords": [
-    "map-libre",
-    "react-maps",
-    "react",
-    "map-libre-react"
-  ],
+  "packageManager": "pnpm@10.24.0",
   "engines": {
     "node": ">=18.0.0",
-    "npm": ">=9.0.0"
-  },
-  "publishConfig": {
-    "access": "public"
+    "pnpm": ">=9.0.0"
   }
 }
