@@ -8,6 +8,9 @@ const mapSpies = {
   easeTo: vi.fn()
 };
 
+const DEFAULT_MAPLIBRE_CSS_HREF =
+  "https://cdn.jsdelivr.net/npm/maplibre-gl@5.18.0/dist/maplibre-gl.css";
+
 vi.mock("react-map-gl/maplibre", async () => {
   const reactModule = await import("react");
 
@@ -52,6 +55,12 @@ describe("MapLibre", () => {
   beforeEach(() => {
     mapSpies.flyTo.mockClear();
     mapSpies.easeTo.mockClear();
+
+    document
+      .querySelectorAll(
+        "link#page-speed-maplibre-gl-css, link[data-page-speed-maps='maplibre-css']"
+      )
+      .forEach((element) => element.remove());
   });
 
   it("uses style key mapping with supplied stadia api key", () => {
@@ -91,5 +100,38 @@ describe("MapLibre", () => {
       latitude: 40.76,
       longitude: -111.91
     });
+  });
+
+  it("injects maplibre stylesheet automatically", () => {
+    render(<MapLibre stadiaApiKey="abc123" />);
+
+    const stylesheet = document.getElementById("page-speed-maplibre-gl-css");
+    expect(stylesheet).toBeInTheDocument();
+    expect(stylesheet).toHaveAttribute("rel", "stylesheet");
+    expect(stylesheet).toHaveAttribute("href", DEFAULT_MAPLIBRE_CSS_HREF);
+  });
+
+  it("supports stylesheet href override", () => {
+    const customHref = "https://example.com/custom-maplibre.css";
+
+    render(<MapLibre stadiaApiKey="abc123" mapLibreCssHref={customHref} />);
+
+    const stylesheet = document.getElementById("page-speed-maplibre-gl-css");
+    expect(stylesheet).toBeInTheDocument();
+    expect(stylesheet).toHaveAttribute("href", customHref);
+  });
+
+  it("injects the maplibre stylesheet only once", () => {
+    render(
+      <>
+        <MapLibre stadiaApiKey="abc123" />
+        <MapLibre stadiaApiKey="abc123" />
+      </>
+    );
+
+    const stylesheets = document.querySelectorAll(
+      "link#page-speed-maplibre-gl-css"
+    );
+    expect(stylesheets).toHaveLength(1);
   });
 });

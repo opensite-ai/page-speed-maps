@@ -48,6 +48,11 @@ export type BasicMarkerInput = {
 
 export type MapLibreProps = {
   stadiaApiKey: string;
+  /**
+   * Optional stylesheet URL override for MapLibre CSS auto-loading.
+   * Defaults to jsDelivr maplibre-gl stylesheet for the bundled version.
+   */
+  mapLibreCssHref?: string;
   viewState?: Partial<MapViewState>;
   onViewStateChange?: (state: Partial<MapViewState>) => void;
   mapStyle?: string;

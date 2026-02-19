@@ -7,7 +7,6 @@ import {
   type MapRef,
   type ViewStateChangeEvent
 } from "react-map-gl/maplibre";
-import "maplibre-gl/dist/maplibre-gl.css";
 
 import type {
   BasicMarkerInput,
@@ -17,8 +16,42 @@ import type {
 } from "../types";
 import { appendStadiaApiKey, getMapLibreStyleUrl } from "../utils";
 
+const DEFAULT_MAPLIBRE_CSS_HREF =
+  "https://cdn.jsdelivr.net/npm/maplibre-gl@5.18.0/dist/maplibre-gl.css";
+const MAPLIBRE_STYLESHEET_ID = "page-speed-maplibre-gl-css";
+
 function joinClassNames(...classNames: Array<string | undefined>): string {
   return classNames.filter(Boolean).join(" ");
+}
+
+function ensureMapLibreStylesheet(href: string): void {
+  if (typeof document === "undefined") {
+    return;
+  }
+
+  const existingLink = document.getElementById(MAPLIBRE_STYLESHEET_ID);
+  if (existingLink instanceof HTMLLinkElement) {
+    if (existingLink.getAttribute("href") !== href) {
+      existingLink.setAttribute("href", href);
+    }
+    return;
+  }
+
+  const matchingLink = Array.from(
+    document.querySelectorAll("link[rel='stylesheet']")
+  ).find((link) => link.getAttribute("href") === href);
+
+  if (matchingLink instanceof HTMLLinkElement) {
+    matchingLink.id = MAPLIBRE_STYLESHEET_ID;
+    return;
+  }
+
+  const stylesheet = document.createElement("link");
+  stylesheet.id = MAPLIBRE_STYLESHEET_ID;
+  stylesheet.rel = "stylesheet";
+  stylesheet.href = href;
+  stylesheet.dataset.pageSpeedMaps = "maplibre-css";
+  document.head.appendChild(stylesheet);
 }
 
 function DefaultMarker({ marker }: { marker: MapLibreMarker }) {
@@ -94,6 +127,7 @@ function normalizeMarkers(
 
 export function MapLibre({
   stadiaApiKey,
+  mapLibreCssHref,
   viewState,
   onViewStateChange,
   mapStyle,
@@ -116,6 +150,11 @@ export function MapLibre({
   flyToOptions = {}
 }: MapLibreProps) {
   const mapRef = React.useRef<MapRef>(null);
+  const resolvedMapLibreCssHref =
+    mapLibreCssHref && mapLibreCssHref.trim().length > 0
+      ? mapLibreCssHref
+      : DEFAULT_MAPLIBRE_CSS_HREF;
+
   const [internalViewState, setInternalViewState] = React.useState<MapViewState>({
     latitude: viewState?.latitude ?? center.lat,
     longitude: viewState?.longitude ?? center.lng,
@@ -125,6 +164,10 @@ export function MapLibre({
   const isUserInteracting = React.useRef(false);
   const isMarkerDragging = React.useRef(false);
   const dragAnimationFrame = React.useRef<number | null>(null);
+
+  React.useEffect(() => {
+    ensureMapLibreStylesheet(resolvedMapLibreCssHref);
+  }, [resolvedMapLibreCssHref]);
 
   React.useEffect(() => {
     if (

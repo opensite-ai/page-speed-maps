@@ -60,4 +60,4 @@ pnpm prepublish
 
 - Styles are resolved via `getMapLibreStyleUrl` and Stadia keys are appended only for Stadia-hosted styles.
 - Non-Stadia URLs are passed through unchanged.
-- MapLibre CSS is imported automatically by the component package.
+- MapLibre CSS is auto-loaded client-side by injecting a single stylesheet link.

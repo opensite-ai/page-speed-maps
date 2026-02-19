@@ -14,6 +14,7 @@
 ### Key Props
 
 - `stadiaApiKey` (required): Stadia Maps API key used for built-in Stadia styles.
+- `mapLibreCssHref` (optional): Override URL for the auto-injected MapLibre stylesheet.
 - `mapStyle` (optional): Built-in style key or URL string.
 - `styleUrl` (optional): Explicit style URL (wins over `mapStyle`).
 - `viewState` / `onViewStateChange`: Controlled view state hooks.
