@@ -1,4 +1,5 @@
-const MAPLIBRE_DEFAULT_STYLE_URL = "https://demotiles.maplibre.org/style.json";
+const MAPLIBRE_DEFAULT_STYLE_URL =
+  "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
 const DEFAULT_STADIA_STYLE_URL =
   "https://tiles.stadiamaps.com/styles/osm_bright.json";
 
@@ -57,19 +58,35 @@ export function getMapLibreStyleUrl(
   value: string | undefined,
   stadiaApiKey: string
 ): string {
+  const normalizedApiKey = stadiaApiKey.trim();
+
   if (!value || typeof value !== "string") {
-    return appendStadiaApiKey(DEFAULT_STADIA_STYLE_URL, stadiaApiKey);
+    if (!normalizedApiKey) {
+      return MAPLIBRE_DEFAULT_STYLE_URL;
+    }
+    return appendStadiaApiKey(DEFAULT_STADIA_STYLE_URL, normalizedApiKey);
   }
 
   if (STYLE_MAP[value]) {
-    return appendStadiaApiKey(STYLE_MAP[value], stadiaApiKey);
+    const mappedStyleUrl = STYLE_MAP[value];
+    if (isStadiaMapsUrl(mappedStyleUrl) && !normalizedApiKey) {
+      return MAPLIBRE_DEFAULT_STYLE_URL;
+    }
+    return appendStadiaApiKey(mappedStyleUrl, normalizedApiKey);
   }
 
   if (HTTP_URL_REGEX.test(value)) {
-    return appendStadiaApiKey(value, stadiaApiKey);
+    if (isStadiaMapsUrl(value) && !normalizedApiKey) {
+      return MAPLIBRE_DEFAULT_STYLE_URL;
+    }
+    return appendStadiaApiKey(value, normalizedApiKey);
   }
 
-  return appendStadiaApiKey(DEFAULT_STADIA_STYLE_URL, stadiaApiKey);
+  if (!normalizedApiKey) {
+    return MAPLIBRE_DEFAULT_STYLE_URL;
+  }
+
+  return appendStadiaApiKey(DEFAULT_STADIA_STYLE_URL, normalizedApiKey);
 }
 
 export { DEFAULT_STADIA_STYLE_URL, MAPLIBRE_DEFAULT_STYLE_URL };

@@ -40,6 +40,7 @@ export function Example() {
 
 - Explicit Stadia auth: no hard-coded keys
 - Auto-loads MapLibre CSS (no extra stylesheet import required)
+- Keyless fallback map style: if no Stadia key is available, roads/landmarks still render via Carto Positron
 - Tree-shakable exports (`@page-speed/maps/core`, `@page-speed/maps/utils`)
 - Drop-in API compatibility with the current `MapLibre` component used in `dt-cms`
 

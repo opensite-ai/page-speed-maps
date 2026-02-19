@@ -59,5 +59,6 @@ pnpm prepublish
 ## Notes
 
 - Styles are resolved via `getMapLibreStyleUrl` and Stadia keys are appended only for Stadia-hosted styles.
+- When `stadiaApiKey` is blank, the resolver falls back to a keyless Carto Positron style so streets/landmarks still render.
 - Non-Stadia URLs are passed through unchanged.
 - MapLibre CSS is auto-loaded client-side by injecting a single stylesheet link.

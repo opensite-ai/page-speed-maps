@@ -27,6 +27,7 @@
 ### `getMapLibreStyleUrl(value, stadiaApiKey)`
 
 Resolves supported style keys to full URLs and appends `api_key` for Stadia URLs.
+If `stadiaApiKey` is blank and a Stadia style is requested, it automatically falls back to keyless Carto Positron.
 
 Supported keys:
 - `default`
