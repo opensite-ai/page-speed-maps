@@ -8,7 +8,10 @@ export default defineConfig({
     "utils/index": "src/utils/index.ts",
     "utils/getMapLibreStyleUrl": "src/utils/getMapLibreStyleUrl.ts",
     "utils/googleMapLinks": "src/utils/googleMapLinks.ts",
-    "types/index": "src/types/index.ts"
+    "types/index": "src/types/index.ts",
+    "hooks/index": "src/hooks/index.ts",
+    "hooks/useGeoCenter": "src/hooks/useGeoCenter.ts",
+    "hooks/useDefaultZoom": "src/hooks/useDefaultZoom.ts"
   },
   format: ["esm", "cjs"],
   dts: true,

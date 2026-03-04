@@ -1,6 +1,6 @@
 {
   "name": "@page-speed/maps",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Performance-optimized MapLibre React components and style utilities for DashTrack.",
   "keywords": [
     "react",
@@ -20,7 +20,7 @@
     "url": "https://github.com/opensite-ai/page-speed-maps/issues"
   },
   "author": "OpenSite AI (https://opensite.ai)",
-  "license": "MIT",
+  "license": "BSD-3-Clause",
   "private": false,
   "type": "module",
   "main": "./dist/index.cjs",
@@ -70,6 +70,21 @@
       "types": "./dist/types/index.d.ts",
       "import": "./dist/types/index.js",
       "require": "./dist/types/index.cjs"
+    },
+    "./hooks": {
+      "types": "./dist/hooks/index.d.ts",
+      "import": "./dist/hooks/index.js",
+      "require": "./dist/hooks/index.cjs"
+    },
+    "./hooks/useGeoCenter": {
+      "types": "./dist/hooks/useGeoCenter.d.ts",
+      "import": "./dist/hooks/useGeoCenter.js",
+      "require": "./dist/hooks/useGeoCenter.cjs"
+    },
+    "./hooks/useDefaultZoom": {
+      "types": "./dist/hooks/useDefaultZoom.d.ts",
+      "import": "./dist/hooks/useDefaultZoom.js",
+      "require": "./dist/hooks/useDefaultZoom.cjs"
     }
   },
   "scripts": {

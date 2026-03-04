@@ -1,4 +1,15 @@
 export { DTMapLibreMap, MapLibre } from "./core";
+export {
+  computeDefaultZoom,
+  computeGeoCenter,
+  useDefaultZoom,
+  useGeoCenter
+} from "./hooks";
+export type {
+  DefaultZoomOptions,
+  GeoCenterResult,
+  GeoCoordinate
+} from "./hooks";
 export type {
   BasicMarkerInput,
   MapControlPosition,
