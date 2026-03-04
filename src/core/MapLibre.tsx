@@ -10,6 +10,7 @@ import {
 
 import type {
   BasicMarkerInput,
+  MapLibreFlyToOptions,
   MapLibreMarker,
   MapLibreProps,
   MapViewState
@@ -19,9 +20,24 @@ import { appendStadiaApiKey, getMapLibreStyleUrl } from "../utils";
 const DEFAULT_MAPLIBRE_CSS_HREF =
   "https://cdn.jsdelivr.net/npm/maplibre-gl@5.18.0/dist/maplibre-gl.css";
 const MAPLIBRE_STYLESHEET_ID = "page-speed-maplibre-gl-css";
+const DEFAULT_FLY_TO_OPTIONS: Readonly<MapLibreFlyToOptions> = Object.freeze({});
+const VIEW_STATE_COORDINATE_EPSILON = 0.000001;
+const VIEW_STATE_ZOOM_EPSILON = 0.01;
+const DEFAULT_FLY_TO_EASING = (t: number): number => 1 - Math.pow(1 - t, 3);
 
 function joinClassNames(...classNames: Array<string | undefined>): string {
   return classNames.filter(Boolean).join(" ");
+}
+
+function hasMeaningfulViewStateDelta(
+  previous: MapViewState,
+  next: MapViewState
+): boolean {
+  return (
+    Math.abs(previous.latitude - next.latitude) > VIEW_STATE_COORDINATE_EPSILON ||
+    Math.abs(previous.longitude - next.longitude) > VIEW_STATE_COORDINATE_EPSILON ||
+    Math.abs(previous.zoom - next.zoom) > VIEW_STATE_ZOOM_EPSILON
+  );
 }
 
 function ensureMapLibreStylesheet(href: string): void {
@@ -147,7 +163,7 @@ export function MapLibre({
   showGeolocateControl = false,
   navigationControlPosition = "bottom-right",
   geolocateControlPosition = "top-left",
-  flyToOptions = {}
+  flyToOptions = DEFAULT_FLY_TO_OPTIONS
 }: MapLibreProps) {
   const mapRef = React.useRef<MapRef>(null);
   const resolvedMapLibreCssHref =
@@ -164,6 +180,22 @@ export function MapLibre({
   const isUserInteracting = React.useRef(false);
   const isMarkerDragging = React.useRef(false);
   const dragAnimationFrame = React.useRef<number | null>(null);
+  const lastReportedViewState = React.useRef<MapViewState | null>(null);
+
+  const resolvedFlyToOptions = React.useMemo(
+    () => ({
+      speed: flyToOptions.speed ?? 0.8,
+      curve: flyToOptions.curve ?? 1.2,
+      bearing: flyToOptions.bearing ?? 0,
+      easing: flyToOptions.easing ?? DEFAULT_FLY_TO_EASING
+    }),
+    [
+      flyToOptions.bearing,
+      flyToOptions.curve,
+      flyToOptions.easing,
+      flyToOptions.speed
+    ]
+  );
 
   React.useEffect(() => {
     ensureMapLibreStylesheet(resolvedMapLibreCssHref);
@@ -186,35 +218,36 @@ export function MapLibre({
         zoom: viewState.zoom ?? previous.zoom
       };
 
-      const hasChanged =
-        previous.latitude !== next.latitude ||
-        previous.longitude !== next.longitude ||
-        previous.zoom !== next.zoom;
+      const hasChanged = hasMeaningfulViewStateDelta(previous, next);
 
       if (!hasChanged) {
         return previous;
       }
 
-      const {
-        speed = 0.8,
-        curve = 1.2,
-        bearing = 0,
-        easing = (t: number) => 1 - Math.pow(1 - t, 3)
-      } = flyToOptions;
+      const isEchoedMoveState =
+        !!lastReportedViewState.current &&
+        !hasMeaningfulViewStateDelta(lastReportedViewState.current, next);
 
-      mapRef.current?.flyTo({
-        center: [next.longitude, next.latitude],
-        zoom: next.zoom,
-        speed,
-        curve,
-        bearing,
-        easing,
-        essential: true
-      });
+      if (!isEchoedMoveState) {
+        mapRef.current?.flyTo({
+          center: [next.longitude, next.latitude],
+          zoom: next.zoom,
+          speed: resolvedFlyToOptions.speed,
+          curve: resolvedFlyToOptions.curve,
+          bearing: resolvedFlyToOptions.bearing,
+          easing: resolvedFlyToOptions.easing,
+          essential: true
+        });
+      }
 
       return next;
     });
-  }, [flyToOptions, viewState?.latitude, viewState?.longitude, viewState?.zoom]);
+  }, [
+    resolvedFlyToOptions,
+    viewState?.latitude,
+    viewState?.longitude,
+    viewState?.zoom
+  ]);
 
   const handleMoveStart = React.useCallback(() => {
     isUserInteracting.current = true;
@@ -229,11 +262,14 @@ export function MapLibre({
         zoom: nextViewState.zoom
       });
 
-      onViewStateChange?.({
+      const roundedViewState = {
         latitude: Number(nextViewState.latitude.toFixed(6)),
         longitude: Number(nextViewState.longitude.toFixed(6)),
         zoom: Number(nextViewState.zoom.toFixed(2))
-      });
+      };
+
+      lastReportedViewState.current = roundedViewState;
+      onViewStateChange?.(roundedViewState);
     },
     [onViewStateChange]
   );

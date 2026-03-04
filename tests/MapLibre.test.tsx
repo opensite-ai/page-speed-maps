@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import * as React from "react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, vi } from "vitest";
 
 import { MapLibre } from "../src/core/MapLibre";
@@ -10,11 +11,14 @@ const mapSpies = {
 
 const DEFAULT_MAPLIBRE_CSS_HREF =
   "https://cdn.jsdelivr.net/npm/maplibre-gl@5.18.0/dist/maplibre-gl.css";
+let latestMapProps: Record<string, unknown> | null = null;
 
 vi.mock("react-map-gl/maplibre", async () => {
   const reactModule = await import("react");
 
   const MockMap = reactModule.forwardRef<any, any>((props, ref) => {
+    latestMapProps = props;
+
     reactModule.useImperativeHandle(ref, () => ({
       flyTo: mapSpies.flyTo,
       easeTo: mapSpies.easeTo,
@@ -133,5 +137,68 @@ describe("MapLibre", () => {
       "link#page-speed-maplibre-gl-css"
     );
     expect(stylesheets).toHaveLength(1);
+  });
+
+  it("does not re-flyTo when controlled state echoes rounded move updates", () => {
+    function ControlledMap(): React.JSX.Element {
+      const [viewState, setViewState] = React.useState({
+        latitude: 33.4484012,
+        longitude: -112.0740008,
+        zoom: 12.345
+      });
+
+      return (
+        <MapLibre
+          stadiaApiKey="abc123"
+          viewState={viewState}
+          onViewStateChange={(nextState) => {
+            setViewState((current) => ({ ...current, ...nextState }));
+          }}
+        />
+      );
+    }
+
+    render(<ControlledMap />);
+    expect(mapSpies.flyTo).not.toHaveBeenCalled();
+    expect(latestMapProps).not.toBeNull();
+
+    act(() => {
+      (latestMapProps?.onMoveStart as (() => void) | undefined)?.();
+    });
+    act(() => {
+      (latestMapProps?.onMove as
+        | ((event: { viewState: { latitude: number; longitude: number; zoom: number } }) => void)
+        | undefined)?.({
+        viewState: {
+          latitude: 33.4484016,
+          longitude: -112.0740014,
+          zoom: 12.3463
+        }
+      });
+    });
+    act(() => {
+      (latestMapProps?.onMoveEnd as ((event: unknown) => void) | undefined)?.({});
+    });
+
+    expect(mapSpies.flyTo).not.toHaveBeenCalled();
+  });
+
+  it("flyTo's on meaningful external view state changes", () => {
+    const { rerender } = render(
+      <MapLibre
+        stadiaApiKey="abc123"
+        viewState={{ latitude: 33.4484, longitude: -112.074, zoom: 10 }}
+      />
+    );
+    expect(mapSpies.flyTo).toHaveBeenCalledTimes(0);
+
+    rerender(
+      <MapLibre
+        stadiaApiKey="abc123"
+        viewState={{ latitude: 34.0522, longitude: -118.2437, zoom: 11.5 }}
+      />
+    );
+
+    expect(mapSpies.flyTo).toHaveBeenCalledTimes(1);
   });
 });
