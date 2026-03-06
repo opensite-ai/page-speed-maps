@@ -1,6 +1,6 @@
 {
   "name": "@page-speed/maps",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Performance-optimized MapLibre React components and style utilities for DashTrack.",
   "keywords": [
     "react",
@@ -85,6 +85,31 @@
       "types": "./dist/hooks/useDefaultZoom.d.ts",
       "import": "./dist/hooks/useDefaultZoom.js",
       "require": "./dist/hooks/useDefaultZoom.cjs"
+    },
+    "./components": {
+      "types": "./dist/components/index.d.ts",
+      "import": "./dist/components/index.js",
+      "require": "./dist/components/index.cjs"
+    },
+    "./components/geo-map": {
+      "types": "./dist/components/geo-map.d.ts",
+      "import": "./dist/components/geo-map.js",
+      "require": "./dist/components/geo-map.cjs"
+    },
+    "./components/map-marker": {
+      "types": "./dist/components/map-marker.d.ts",
+      "import": "./dist/components/map-marker.js",
+      "require": "./dist/components/map-marker.cjs"
+    },
+    "./utils/cn": {
+      "types": "./dist/utils/cn.d.ts",
+      "import": "./dist/utils/cn.js",
+      "require": "./dist/utils/cn.cjs"
+    },
+    "./utils/simple-pressable": {
+      "types": "./dist/utils/simple-pressable.d.ts",
+      "import": "./dist/utils/simple-pressable.js",
+      "require": "./dist/utils/simple-pressable.cjs"
     }
   },
   "scripts": {
@@ -103,8 +128,10 @@
     "react-dom": ">=18.0.0"
   },
   "dependencies": {
+    "clsx": "^2.1.1",
     "maplibre-gl": "^5.18.0",
-    "react-map-gl": "^8.1.0"
+    "react-map-gl": "^8.1.0",
+    "tailwind-merge": "^2.5.5"
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.1",

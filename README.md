@@ -570,3 +570,123 @@ function GeoMap({ markers, clusters, defaultViewState }) {
 ## License
 
 BSD-3-Clause. See [LICENSE](./LICENSE) for details.
+
+---
+
+## New: Feature-Rich Components
+
+### `GeoMap`
+
+Full-featured map component with markers, clusters, rich media panels, and automatic view calculation.
+
+```tsx
+import { GeoMap, createMapMarkerElement } from "@page-speed/maps";
+import type { GeoMapMarker } from "@page-speed/maps";
+
+const markers: GeoMapMarker[] = [
+  {
+    id: 'office',
+    latitude: 40.7128,
+    longitude: -74.0060,
+    title: 'New York Office',
+    summary: 'Our headquarters in downtown Manhattan',
+    locationLine: '123 Broadway, New York, NY 10001',
+    hoursLine: 'Mon-Fri: 9:00 AM - 6:00 PM',
+    mediaItems: [
+      { id: '1', src: '/office.jpg', alt: 'Office' },
+    ],
+    markerElement: createMapMarkerElement({ size: 'lg' }),
+    actions: [
+      {
+        label: 'Get Directions',
+        href: 'https://maps.app.goo.gl/example',
+      },
+    ],
+  },
+];
+
+<GeoMap
+  markers={markers}
+  stadiaApiKey="your-key"
+  panelPosition="bottom-left"
+  showNavigationControl
+/>
+```
+
+**Key Features:**
+- ✅ Auto-calculated center and zoom from markers
+- ✅ Rich media carousels (images/videos)
+- ✅ Interactive marker panels
+- ✅ Clustering support
+- ✅ Custom marker elements
+- ✅ Action buttons and links
+
+[→ Full GeoMap Documentation](./docs/EXAMPLES.md#markers-with-rich-panels)
+
+### `MapMarker`
+
+Beautiful concentric circle markers with hover and selection states.
+
+```tsx
+import { MapMarker, NeutralMapMarker, createMapMarkerElement } from "@page-speed/maps";
+
+// Direct usage
+<MapMarker
+  size="lg"
+  isSelected
+  dotColor="#1E40AF"
+  innerRingColor="#3B82F6"
+  middleRingColor="#93C5FD"
+  outerRingColor="#DBEAFE"
+/>
+
+// With GeoMap
+const markers = [{
+  id: 'loc-1',
+  latitude: 40.7128,
+  longitude: -74.0060,
+  markerElement: createMapMarkerElement({ size: 'lg' }),
+}];
+```
+
+**Sizes:** `sm` | `md` | `lg`  
+**Pre-configured:** `NeutralMapMarker` for neutral gray design
+
+[→ MapMarker Examples](./docs/EXAMPLES.md#custom-marker-elements)
+
+---
+
+## Migration from @opensite/ui
+
+If you're migrating map components from `@opensite/ui` to `@page-speed/maps`, see our comprehensive migration guide:
+
+**[→ Migration Guide](./docs/MIGRATION_GUIDE.md)**
+
+**Key Changes:**
+- ✅ Fixed zoom/centering bugs
+- ✅ New MapMarker components
+- ✅ Better tree-shakability
+- ✅ Optional peer dependencies for icons/images
+
+---
+
+## Documentation
+
+- **[Examples](./docs/EXAMPLES.md)** - Complete code examples
+- **[Migration Guide](./docs/MIGRATION_GUIDE.md)** - Migrating from @opensite/ui
+- **[API Reference](./docs/API.md)** - Full API documentation
+- **[Ecosystem Guidelines](./docs/ECOSYSTEM_GUIDELINES.md)** - Performance standards
+
+---
+
+## Related Packages
+
+- [@page-speed/img](https://www.npmjs.com/package/@page-speed/img) - Optimized image component
+- [@page-speed/video](https://www.npmjs.com/package/@opensite/video) - Performance video component
+- [@page-speed/icon](https://www.npmjs.com/package/@page-speed/icon) - Icon system
+- [@page-speed/forms](https://www.npmjs.com/package/@page-speed/forms) - Form components
+
+---
+
+Made with ❤️ for the DashTrack Platform
+
