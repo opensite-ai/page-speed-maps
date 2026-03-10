@@ -13,7 +13,11 @@ import { cn } from "../utils/cn";
 import { SimplePressable } from "../utils/simple-pressable";
 
 // Optional peer dependencies - allow consuming apps to provide these
-type IconComponent = React.ComponentType<{ name: string; size?: number; className?: string }>;
+type IconComponent = React.ComponentType<{
+  name: string;
+  size?: number;
+  className?: string;
+}>;
 type ImgComponent = React.ComponentType<{
   src: string;
   alt?: string;
@@ -210,10 +214,11 @@ function resolveActionKey(action: ActionConfig, index: number): string {
 }
 
 // Simple fallback icon component
-const FallbackIcon: React.FC<{ name: string; size?: number; className?: string }> = ({
-  size = 20,
-  className,
-}) => (
+const FallbackIcon: React.FC<{
+  name: string;
+  size?: number;
+  className?: string;
+}> = ({ size = 20, className }) => (
   <svg
     width={size}
     height={size}
@@ -269,7 +274,7 @@ function MarkerActions({ actions }: { actions?: ActionConfig[] }) {
             : "bg-primary text-primary-foreground hover:bg-primary/90",
           size === "sm" && "text-sm px-3 py-1.5",
           size === "icon" && "p-2",
-          actionClassName
+          actionClassName,
         );
 
         return (
@@ -370,7 +375,7 @@ function MarkerMediaCarousel({
           <button
             type="button"
             aria-label="Show previous media"
-            className="absolute left-4 top-1/2 inline-flex size-10 -translate-y-1/2 items-center justify-center rounded-2xl bg-card text-card-foreground shadow-lg border-4 border-black hover:border-white hover:bg-black hover:text-white transition-all duration-500 z-[2]"
+            className="absolute left-4 top-1/2 inline-flex size-10 -translate-y-1/2 items-center justify-center rounded-2xl bg-card text-card-foreground shadow-lg border-4 border-black hover:border-white hover:bg-black hover:text-white transition-all duration-500 z-2"
             onClick={() => {
               setActiveIndex(
                 (current) => (current - 1 + totalItems) % totalItems,
@@ -556,13 +561,19 @@ export function GeoMap({
     const allCoords: MapCoordinate[] = [];
 
     // Collect all marker coordinates
-    normalizedStandaloneMarkers.forEach(marker => {
-      allCoords.push({ latitude: marker.latitude, longitude: marker.longitude });
+    normalizedStandaloneMarkers.forEach((marker) => {
+      allCoords.push({
+        latitude: marker.latitude,
+        longitude: marker.longitude,
+      });
     });
 
     // Collect all cluster coordinates
-    normalizedClusters.forEach(cluster => {
-      allCoords.push({ latitude: cluster.latitude, longitude: cluster.longitude });
+    normalizedClusters.forEach((cluster) => {
+      allCoords.push({
+        latitude: cluster.latitude,
+        longitude: cluster.longitude,
+      });
     });
 
     // If we have coordinates, calculate the center
@@ -572,7 +583,7 @@ export function GeoMap({
           latitude: acc.latitude + coord.latitude,
           longitude: acc.longitude + coord.longitude,
         }),
-        { latitude: 0, longitude: 0 }
+        { latitude: 0, longitude: 0 },
       );
 
       return {
@@ -594,11 +605,17 @@ export function GeoMap({
     }
 
     const allCoords: MapCoordinate[] = [];
-    normalizedStandaloneMarkers.forEach(marker => {
-      allCoords.push({ latitude: marker.latitude, longitude: marker.longitude });
+    normalizedStandaloneMarkers.forEach((marker) => {
+      allCoords.push({
+        latitude: marker.latitude,
+        longitude: marker.longitude,
+      });
     });
-    normalizedClusters.forEach(cluster => {
-      allCoords.push({ latitude: cluster.latitude, longitude: cluster.longitude });
+    normalizedClusters.forEach((cluster) => {
+      allCoords.push({
+        latitude: cluster.latitude,
+        longitude: cluster.longitude,
+      });
     });
 
     if (allCoords.length === 0) {
@@ -606,8 +623,8 @@ export function GeoMap({
     }
 
     // Calculate bounding box
-    const lats = allCoords.map(c => c.latitude);
-    const lngs = allCoords.map(c => c.longitude);
+    const lats = allCoords.map((c) => c.latitude);
+    const lngs = allCoords.map((c) => c.longitude);
     const latDiff = Math.max(...lats) - Math.min(...lats);
     const lngDiff = Math.max(...lngs) - Math.min(...lngs);
     const maxDiff = Math.max(latDiff, lngDiff);
@@ -901,7 +918,7 @@ export function GeoMap({
       return (
         <div
           className={cn(
-            "relative w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-2xl",
+            "relative w-[320px] overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-2xl",
             panelClassName,
           )}
         >
@@ -1000,7 +1017,7 @@ export function GeoMap({
       return (
         <div
           className={cn(
-            "relative w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-border bg-card text-card-foreground p-4 shadow-2xl",
+            "relative w-[320px] overflow-hidden rounded-xl border border-border bg-card text-card-foreground p-4 shadow-2xl",
             panelClassName,
           )}
         >
