@@ -165,7 +165,7 @@ const PANEL_POSITION_CLASS: Record<PanelPosition, string> = {
 function getOptimalPanelPosition(
   markerLat: number,
   markerLng: number,
-  mapCenter: { latitude: number; longitude: number }
+  mapCenter: { latitude: number; longitude: number },
 ): PanelPosition {
   const isNorth = markerLat >= mapCenter.latitude;
   const isEast = markerLng >= mapCenter.longitude;
@@ -299,9 +299,10 @@ function MarkerActions({ actions }: { actions?: ActionConfig[] }) {
 
         // Simple button styles
         const buttonStyles = cn(
-          "inline-flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-colors",
+          "gap-2 px-4 py-2 rounded-md font-medium transition-colors duration-500",
+          "flex justify-center items-center",
           variant === "outline"
-            ? "border border-border bg-background hover:bg-muted"
+            ? "border border-border bg-card text-card-foreground hover:bg-primary hover:text-primary-foreground"
             : "bg-primary text-primary-foreground hover:bg-primary/90",
           size === "sm" && "text-sm px-3 py-1.5",
           size === "icon" && "p-2",
@@ -426,7 +427,7 @@ function MarkerMediaCarousel({
             <IconComponent name="lucide/arrow-right" size={18} />
           </button>
 
-          <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 items-center gap-1.5 z-[2]">
+          <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 items-center gap-1.5 z-2">
             {mediaItems.map((item, index) => (
               <button
                 key={normalizeId(item.id, `media-dot-${index}`)}
@@ -524,7 +525,7 @@ export function GeoMap({
   // Track container dimensions for proper zoom calculations
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [containerDimensions, setContainerDimensions] = React.useState({
-    width: 800,  // Default width
+    width: 800, // Default width
     height: 520, // Default height
   });
 
@@ -537,8 +538,8 @@ export function GeoMap({
     };
 
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   // Calculate height based on mapSize prop or defaults
@@ -739,7 +740,9 @@ export function GeoMap({
 
     // Use properly calculated zoom, but subtract a bit to ensure all markers are visible
     // The -0.5 adjustment ensures markers aren't too close to edges
-    const adjustedZoom = properZoom ? properZoom - 0.5 : DEFAULT_VIEW_STATE.zoom;
+    const adjustedZoom = properZoom
+      ? properZoom - 0.5
+      : DEFAULT_VIEW_STATE.zoom;
 
     // Ensure we don't zoom in too much
     return Math.min(adjustedZoom, 15);
@@ -754,12 +757,13 @@ export function GeoMap({
   });
 
   // Track dynamic panel position based on selected marker
-  const [dynamicPanelPosition, setDynamicPanelPosition] = React.useState<PanelPosition>(
-    panelPosition
-  );
+  const [dynamicPanelPosition, setDynamicPanelPosition] =
+    React.useState<PanelPosition>(panelPosition);
 
   // Use ref to track current view state without causing re-renders
-  const viewStateRef = React.useRef<Partial<MapViewState>>(uncontrolledViewState);
+  const viewStateRef = React.useRef<Partial<MapViewState>>(
+    uncontrolledViewState,
+  );
 
   // FIX: Update view state when markers/clusters change
   React.useEffect(() => {
@@ -928,7 +932,7 @@ export function GeoMap({
       const optimalPosition = getOptimalPanelPosition(
         marker.latitude,
         marker.longitude,
-        center
+        center,
       );
       setDynamicPanelPosition(optimalPosition);
 
@@ -961,7 +965,7 @@ export function GeoMap({
       const optimalPosition = getOptimalPanelPosition(
         cluster.latitude,
         cluster.longitude,
-        center
+        center,
       );
       setDynamicPanelPosition(optimalPosition);
 
@@ -1257,35 +1261,41 @@ export function GeoMap({
     <div
       ref={containerRef}
       className={cn(
-        "relative rounded-2xl border border-border bg-background",
+        "relative",
         // Remove overflow-hidden from outer container to allow panel to overflow
         className,
       )}
       style={{
         // If className includes height settings, they'll override via CSS specificity
-        height: className?.includes('h-[') || className?.includes('min-h-[') || className?.includes('max-h-[')
-          ? undefined
-          : `${calculatedHeight}px`,
+        height:
+          className?.includes("h-[") ||
+          className?.includes("min-h-[") ||
+          className?.includes("max-h-[")
+            ? undefined
+            : `${calculatedHeight}px`,
         // Explicitly allow overflow for marker panels
         overflow: "visible",
       }}
     >
       <div
         className={cn(
-          "w-full rounded-2xl",
+          "w-full",
           // Only apply default height class if mapWrapperClassName not provided
           !mapWrapperClassName && `h-[${calculatedHeight}px]`,
-          mapWrapperClassName
+          mapWrapperClassName,
         )}
         style={{
           // If mapWrapperClassName includes height, let it handle the height
-          height: mapWrapperClassName?.includes('h-[') || mapWrapperClassName?.includes('min-h-[') || mapWrapperClassName?.includes('max-h-[')
-            ? undefined
-            : `${calculatedHeight}px`,
+          height:
+            mapWrapperClassName?.includes("h-[") ||
+            mapWrapperClassName?.includes("min-h-[") ||
+            mapWrapperClassName?.includes("max-h-[")
+              ? undefined
+              : `${calculatedHeight}px`,
           maxHeight: "100vh", // Prevent excessive growth
           position: "relative",
           // Keep overflow hidden only on the map wrapper to contain the canvas
-          overflow: "hidden"
+          overflow: "hidden",
         }}
       >
         <MapLibre
@@ -1311,9 +1321,12 @@ export function GeoMap({
           className={cn("h-full w-full", mapClassName)}
           style={{
             // Pass the calculated height to MapLibre for better zoom calculations
-            height: mapClassName?.includes('h-[') || mapClassName?.includes('min-h-[') || mapClassName?.includes('max-h-[')
-              ? undefined
-              : `${calculatedHeight}px`
+            height:
+              mapClassName?.includes("h-[") ||
+              mapClassName?.includes("min-h-[") ||
+              mapClassName?.includes("max-h-[")
+                ? undefined
+                : `${calculatedHeight}px`,
           }}
         >
           {mapChildren}
