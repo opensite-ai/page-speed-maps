@@ -128,6 +128,8 @@ export interface GeoMapProps {
   clearSelectionOnMapClick?: boolean;
   mapChildren?: React.ReactNode;
   optixFlowConfig?: any;
+  // Map size configuration
+  mapSize?: { desktop: number; mobile: number };
   // Optional component overrides for external dependencies
   IconComponent?: IconComponent;
   ImgComponent?: ImgComponent;
@@ -486,9 +488,32 @@ export function GeoMap({
   clearSelectionOnMapClick = true,
   mapChildren,
   optixFlowConfig,
+  mapSize,
   IconComponent = FallbackIcon,
   ImgComponent = FallbackImg,
 }: GeoMapProps): React.JSX.Element {
+  // Detect mobile screen size
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768); // md breakpoint
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Calculate height based on mapSize prop or defaults
+  const calculatedHeight = React.useMemo(() => {
+    if (mapSize) {
+      return isMobile ? mapSize.mobile : mapSize.desktop;
+    }
+    // Default heights
+    return isMobile ? 420 : 520;
+  }, [mapSize, isMobile]);
+
   const normalizedStandaloneMarkers = React.useMemo<NormalizedMarker[]>(
     () =>
       markers.map((marker, index) => ({
@@ -598,7 +623,7 @@ export function GeoMap({
     };
   }, [normalizedClusters, normalizedStandaloneMarkers]);
 
-  // FIX: Calculate proper initial zoom based on marker spread
+  // FIX: Calculate proper initial zoom based on marker spread and container height
   const calculatedZoom = React.useMemo(() => {
     if (normalizedStandaloneMarkers.length + normalizedClusters.length <= 1) {
       return markerFocusZoom; // Single marker, use focus zoom
@@ -629,16 +654,22 @@ export function GeoMap({
     const lngDiff = Math.max(...lngs) - Math.min(...lngs);
     const maxDiff = Math.max(latDiff, lngDiff);
 
-    // Estimate zoom level based on coordinate spread
-    // This is a rough approximation - adjust multiplier as needed
-    if (maxDiff > 10) return 3;
-    if (maxDiff > 5) return 5;
-    if (maxDiff > 2) return 7;
-    if (maxDiff > 1) return 9;
-    if (maxDiff > 0.5) return 10;
-    if (maxDiff > 0.1) return 12;
-    return 13;
-  }, [normalizedClusters, normalizedStandaloneMarkers, markerFocusZoom]);
+    // Adjust zoom calculation based on container height
+    // Larger containers can show more detail, smaller need to zoom out more
+    const heightFactor = calculatedHeight / 520; // Normalize to default height
+    const paddingFactor = 0.85; // Add some padding around markers (was effectively 1.0)
+
+    // Estimate zoom level based on coordinate spread with height and padding adjustments
+    // Slightly reduced zoom levels to prevent being too zoomed in
+    if (maxDiff > 10) return Math.max(2, 3 * heightFactor * paddingFactor);
+    if (maxDiff > 5) return Math.max(4, 5 * heightFactor * paddingFactor);
+    if (maxDiff > 2) return Math.max(6, 7 * heightFactor * paddingFactor);
+    if (maxDiff > 1) return Math.max(8, 9 * heightFactor * paddingFactor);
+    if (maxDiff > 0.5) return Math.max(9, 10 * heightFactor * paddingFactor);
+    if (maxDiff > 0.1) return Math.max(11, 12 * heightFactor * paddingFactor);
+    if (maxDiff > 0.01) return Math.max(12, 13 * heightFactor * paddingFactor);
+    return Math.max(11, 12 * heightFactor * paddingFactor);
+  }, [normalizedClusters, normalizedStandaloneMarkers, markerFocusZoom, calculatedHeight]);
 
   const [uncontrolledViewState, setUncontrolledViewState] = React.useState<
     Partial<MapViewState>
@@ -1076,21 +1107,34 @@ export function GeoMap({
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-2xl border border-border bg-background",
+        "relative rounded-2xl border border-border bg-background",
+        // Remove overflow-hidden from outer container to allow panel to overflow
         className,
       )}
+      style={{
+        // If className includes height settings, they'll override via CSS specificity
+        height: className?.includes('h-[') || className?.includes('min-h-[') || className?.includes('max-h-[')
+          ? undefined
+          : `${calculatedHeight}px`,
+        // Explicitly allow overflow for marker panels
+        overflow: "visible",
+      }}
     >
       <div
         className={cn(
-          "w-full",
-          // Default height, can be overridden by mapWrapperClassName
-          mapWrapperClassName || "h-[520px]"
+          "w-full rounded-2xl",
+          // Only apply default height class if mapWrapperClassName not provided
+          !mapWrapperClassName && `h-[${calculatedHeight}px]`,
+          mapWrapperClassName
         )}
         style={{
-          // CRITICAL: Always use explicit height to prevent MapLibre canvas expansion
-          height: mapWrapperClassName ? undefined : "520px",
+          // If mapWrapperClassName includes height, let it handle the height
+          height: mapWrapperClassName?.includes('h-[') || mapWrapperClassName?.includes('min-h-[') || mapWrapperClassName?.includes('max-h-[')
+            ? undefined
+            : `${calculatedHeight}px`,
           maxHeight: "100vh", // Prevent excessive growth
           position: "relative",
+          // Keep overflow hidden only on the map wrapper to contain the canvas
           overflow: "hidden"
         }}
       >
@@ -1115,6 +1159,12 @@ export function GeoMap({
           geolocateControlPosition={geolocateControlPosition}
           flyToOptions={flyToOptions}
           className={cn("h-full w-full", mapClassName)}
+          style={{
+            // Pass the calculated height to MapLibre for better zoom calculations
+            height: mapClassName?.includes('h-[') || mapClassName?.includes('min-h-[') || mapClassName?.includes('max-h-[')
+              ? undefined
+              : `${calculatedHeight}px`
+          }}
         >
           {mapChildren}
         </MapLibre>
@@ -1123,9 +1173,13 @@ export function GeoMap({
       {selection.type !== "none" ? (
         <div
           className={cn(
-            "pointer-events-none absolute z-20",
+            "pointer-events-none absolute z-30",
             PANEL_POSITION_CLASS[panelPosition],
           )}
+          style={{
+            // Ensure panel can overflow and has higher z-index
+            zIndex: 30,
+          }}
         >
           <div className="pointer-events-auto">{renderMarkerPanel()}</div>
         </div>

@@ -1,6 +1,6 @@
 {
   "name": "@page-speed/maps",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "Performance-optimized MapLibre React components and style utilities for DashTrack.",
   "keywords": [
     "react",
