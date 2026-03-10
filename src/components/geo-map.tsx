@@ -1073,14 +1073,38 @@ export function GeoMap({
     return null;
   };
 
+  // Detect if we're in an iframe to adjust behavior
+  const isInIframe = React.useMemo(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return window.self !== window.top;
+    } catch {
+      return true; // Blocked by same-origin policy means we're in an iframe
+    }
+  }, []);
+
   return (
     <div
       className={cn(
         "relative overflow-hidden rounded-2xl border border-border bg-background",
         className,
       )}
+      style={{
+        // Use CSS containment to prevent layout shifts in iframes
+        ...(isInIframe && { contain: "layout size" }),
+      }}
     >
-      <div className={cn("h-[520px] w-full", mapWrapperClassName)}>
+      <div
+        className={cn(
+          "w-full",
+          // Default height, can be overridden by mapWrapperClassName
+          mapWrapperClassName || "h-[520px]"
+        )}
+        style={{
+          // Ensure proper height containment in iframes
+          ...(isInIframe && !mapWrapperClassName && { height: "520px", minHeight: "420px" }),
+        }}
+      >
         <MapLibre
           stadiaApiKey={stadiaApiKey}
           mapStyle={mapStyle}

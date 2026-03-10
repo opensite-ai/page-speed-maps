@@ -434,10 +434,71 @@ export function MapLibre({
     return getMapLibreStyleUrl("osm-bright", stadiaApiKey);
   }, [mapStyle, stadiaApiKey, styleUrl]);
 
+  // Detect if we're in an iframe to adjust resize behavior
+  const isInIframe = React.useMemo(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return window.self !== window.top;
+    } catch {
+      return true; // Blocked by same-origin policy means we're in an iframe
+    }
+  }, []);
+
+  // Enhanced resize handling for iframe contexts
+  React.useEffect(() => {
+    if (!isInIframe || !mapRef.current) return;
+
+    let lastHeight = 0;
+    let lastWidth = 0;
+    let resizeTimeout: NodeJS.Timeout;
+
+    const handleResize = (entries: ResizeObserverEntry[]) => {
+      clearTimeout(resizeTimeout);
+
+      // Get the container dimensions
+      const entry = entries[0];
+      if (!entry) return;
+
+      const { width, height } = entry.contentRect;
+
+      // Only trigger resize if dimensions actually changed meaningfully
+      const widthChanged = Math.abs(width - lastWidth) > 1;
+      const heightChanged = Math.abs(height - lastHeight) > 1;
+
+      if (widthChanged || heightChanged) {
+        lastWidth = width;
+        lastHeight = height;
+
+        // Debounce the actual map resize
+        resizeTimeout = setTimeout(() => {
+          mapRef.current?.resize();
+        }, 250);
+      }
+    };
+
+    // Observe the parent container, not the map container itself
+    const parentElement = mapRef.current.getContainer().parentElement;
+    if (parentElement) {
+      const resizeObserver = new ResizeObserver(handleResize);
+      resizeObserver.observe(parentElement);
+
+      return () => {
+        clearTimeout(resizeTimeout);
+        resizeObserver.disconnect();
+      };
+    }
+  }, [isInIframe]);
+
   return (
     <div
       className={joinClassNames("relative w-full h-full", className)}
-      style={{ width: "100%", height: "100%", ...style }}
+      style={{
+        width: "100%",
+        height: "100%",
+        // Prevent content from pushing container size in iframes
+        ...(isInIframe && { overflow: "hidden", position: "relative" }),
+        ...style
+      }}
     >
       <Map
         ref={mapRef}
@@ -448,7 +509,7 @@ export function MapLibre({
         onMoveEnd={handleMoveEnd}
         onClick={handleMapClick}
         attributionControl={false}
-        trackResize
+        trackResize={!isInIframe} // Disable automatic resize tracking in iframes, use manual observer instead
         dragRotate={false}
         touchZoomRotate={false}
       >
