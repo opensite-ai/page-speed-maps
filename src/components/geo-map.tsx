@@ -9,6 +9,7 @@ import type {
   MapLibreFlyToOptions,
   MapViewState,
 } from "../types";
+import { useDefaultZoom } from "../hooks/useDefaultZoom";
 import { cn } from "../utils/cn";
 import { SimplePressable } from "../utils/simple-pressable";
 
@@ -492,6 +493,13 @@ export function GeoMap({
   IconComponent = FallbackIcon,
   ImgComponent = FallbackImg,
 }: GeoMapProps): React.JSX.Element {
+  // Track container dimensions for proper zoom calculations
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const [containerDimensions, setContainerDimensions] = React.useState({
+    width: 800,  // Default width
+    height: 520, // Default height
+  });
+
   // Detect mobile screen size
   const [isMobile, setIsMobile] = React.useState(false);
 
@@ -513,6 +521,30 @@ export function GeoMap({
     // Default heights
     return isMobile ? 420 : 520;
   }, [mapSize, isMobile]);
+
+  // Track container dimensions
+  React.useEffect(() => {
+    if (!containerRef.current) return;
+
+    const updateDimensions = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        setContainerDimensions({
+          width: rect.width || 800,
+          height: rect.height || calculatedHeight,
+        });
+      }
+    };
+
+    updateDimensions();
+
+    // Check for ResizeObserver availability (for test environments)
+    if (typeof ResizeObserver !== "undefined") {
+      const resizeObserver = new ResizeObserver(updateDimensions);
+      resizeObserver.observe(containerRef.current);
+      return () => resizeObserver.disconnect();
+    }
+  }, [calculatedHeight]);
 
   const normalizedStandaloneMarkers = React.useMemo<NormalizedMarker[]>(
     () =>
@@ -623,53 +655,56 @@ export function GeoMap({
     };
   }, [normalizedClusters, normalizedStandaloneMarkers]);
 
-  // FIX: Calculate proper initial zoom based on marker spread and container height
+  // Prepare coordinates for zoom calculation
+  const zoomCoordinates = React.useMemo(() => {
+    const coords: Array<{ lat: number; lng: number }> = [];
+
+    normalizedStandaloneMarkers.forEach((marker) => {
+      coords.push({
+        lat: marker.latitude,
+        lng: marker.longitude,
+      });
+    });
+
+    normalizedClusters.forEach((cluster) => {
+      coords.push({
+        lat: cluster.latitude,
+        lng: cluster.longitude,
+      });
+    });
+
+    return coords;
+  }, [normalizedStandaloneMarkers, normalizedClusters]);
+
+  // Use proper zoom calculation hook
+  const properZoom = useDefaultZoom({
+    coordinates: zoomCoordinates,
+    mapWidth: containerDimensions.width,
+    mapHeight: containerDimensions.height,
+    padding: 80, // Increased padding for better framing
+    maxZoom: 18,
+    minZoom: 1,
+  });
+
+  // Calculate zoom with fallback for special cases
   const calculatedZoom = React.useMemo(() => {
-    if (normalizedStandaloneMarkers.length + normalizedClusters.length <= 1) {
-      return markerFocusZoom; // Single marker, use focus zoom
+    // Single marker case
+    if (zoomCoordinates.length === 1) {
+      return markerFocusZoom;
     }
 
-    const allCoords: MapCoordinate[] = [];
-    normalizedStandaloneMarkers.forEach((marker) => {
-      allCoords.push({
-        latitude: marker.latitude,
-        longitude: marker.longitude,
-      });
-    });
-    normalizedClusters.forEach((cluster) => {
-      allCoords.push({
-        latitude: cluster.latitude,
-        longitude: cluster.longitude,
-      });
-    });
-
-    if (allCoords.length === 0) {
+    // No markers case
+    if (zoomCoordinates.length === 0) {
       return DEFAULT_VIEW_STATE.zoom;
     }
 
-    // Calculate bounding box
-    const lats = allCoords.map((c) => c.latitude);
-    const lngs = allCoords.map((c) => c.longitude);
-    const latDiff = Math.max(...lats) - Math.min(...lats);
-    const lngDiff = Math.max(...lngs) - Math.min(...lngs);
-    const maxDiff = Math.max(latDiff, lngDiff);
+    // Use properly calculated zoom, but subtract a bit to ensure all markers are visible
+    // The -0.5 adjustment ensures markers aren't too close to edges
+    const adjustedZoom = properZoom ? properZoom - 0.5 : DEFAULT_VIEW_STATE.zoom;
 
-    // Adjust zoom calculation based on container height
-    // Larger containers can show more detail, smaller need to zoom out more
-    const heightFactor = calculatedHeight / 520; // Normalize to default height
-    const paddingFactor = 0.85; // Add some padding around markers (was effectively 1.0)
-
-    // Estimate zoom level based on coordinate spread with height and padding adjustments
-    // Slightly reduced zoom levels to prevent being too zoomed in
-    if (maxDiff > 10) return Math.max(2, 3 * heightFactor * paddingFactor);
-    if (maxDiff > 5) return Math.max(4, 5 * heightFactor * paddingFactor);
-    if (maxDiff > 2) return Math.max(6, 7 * heightFactor * paddingFactor);
-    if (maxDiff > 1) return Math.max(8, 9 * heightFactor * paddingFactor);
-    if (maxDiff > 0.5) return Math.max(9, 10 * heightFactor * paddingFactor);
-    if (maxDiff > 0.1) return Math.max(11, 12 * heightFactor * paddingFactor);
-    if (maxDiff > 0.01) return Math.max(12, 13 * heightFactor * paddingFactor);
-    return Math.max(11, 12 * heightFactor * paddingFactor);
-  }, [normalizedClusters, normalizedStandaloneMarkers, markerFocusZoom, calculatedHeight]);
+    // Ensure we don't zoom in too much
+    return Math.min(adjustedZoom, 15);
+  }, [properZoom, zoomCoordinates.length, markerFocusZoom]);
 
   const [uncontrolledViewState, setUncontrolledViewState] = React.useState<
     Partial<MapViewState>
@@ -1106,6 +1141,7 @@ export function GeoMap({
 
   return (
     <div
+      ref={containerRef}
       className={cn(
         "relative rounded-2xl border border-border bg-background",
         // Remove overflow-hidden from outer container to allow panel to overflow
