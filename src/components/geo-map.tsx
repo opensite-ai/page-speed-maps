@@ -557,13 +557,24 @@ export function GeoMap({
     const updateDimensions = () => {
       if (containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
-        setContainerDimensions({
-          width: rect.width || 800,
-          height: rect.height || calculatedHeight,
+        setContainerDimensions((prev) => {
+          // Only update if dimensions actually changed to avoid infinite loops
+          const newWidth = rect.width || 800;
+          const newHeight = rect.height || calculatedHeight;
+
+          if (prev.width === newWidth && prev.height === newHeight) {
+            return prev;
+          }
+
+          return {
+            width: newWidth,
+            height: newHeight,
+          };
         });
       }
     };
 
+    // Initial measurement
     updateDimensions();
 
     // Check for ResizeObserver availability (for test environments)
@@ -747,6 +758,9 @@ export function GeoMap({
     panelPosition
   );
 
+  // Use ref to track current view state without causing re-renders
+  const viewStateRef = React.useRef<Partial<MapViewState>>(uncontrolledViewState);
+
   // FIX: Update view state when markers/clusters change
   React.useEffect(() => {
     if (!viewState && !defaultViewState) {
@@ -763,6 +777,11 @@ export function GeoMap({
   const resolvedViewState = isControlledViewState
     ? viewState
     : uncontrolledViewState;
+
+  // Update ref when view state changes
+  React.useEffect(() => {
+    viewStateRef.current = resolvedViewState || uncontrolledViewState;
+  }, [resolvedViewState, uncontrolledViewState]);
 
   const applyViewState = React.useCallback(
     (nextState: Partial<MapViewState>) => {
@@ -867,18 +886,17 @@ export function GeoMap({
       });
 
       // Calculate optimal panel position based on marker location
-      const currentCenter = resolvedViewState || {
-        latitude: firstCoordinate.latitude,
-        longitude: firstCoordinate.longitude,
+      // Use ref to avoid dependency issues
+      const currentState = viewStateRef.current;
+      const center = {
+        latitude: currentState.latitude ?? 0,
+        longitude: currentState.longitude ?? 0,
       };
 
       const optimalPosition = getOptimalPanelPosition(
         marker.latitude,
         marker.longitude,
-        {
-          latitude: currentCenter.latitude ?? firstCoordinate.latitude,
-          longitude: currentCenter.longitude ?? firstCoordinate.longitude,
-        }
+        center
       );
       setDynamicPanelPosition(optimalPosition);
 
@@ -890,7 +908,7 @@ export function GeoMap({
 
       emitSelectionChange({ type: "marker", marker });
     },
-    [applyViewState, emitSelectionChange, markerFocusZoom, resolvedViewState, firstCoordinate],
+    [applyViewState, emitSelectionChange, markerFocusZoom],
   );
 
   const selectCluster = React.useCallback(
@@ -901,18 +919,17 @@ export function GeoMap({
       });
 
       // Calculate optimal panel position based on cluster location
-      const currentCenter = resolvedViewState || {
-        latitude: firstCoordinate.latitude,
-        longitude: firstCoordinate.longitude,
+      // Use ref to avoid dependency issues
+      const currentState = viewStateRef.current;
+      const center = {
+        latitude: currentState.latitude ?? 0,
+        longitude: currentState.longitude ?? 0,
       };
 
       const optimalPosition = getOptimalPanelPosition(
         cluster.latitude,
         cluster.longitude,
-        {
-          latitude: currentCenter.latitude ?? firstCoordinate.latitude,
-          longitude: currentCenter.longitude ?? firstCoordinate.longitude,
-        }
+        center
       );
       setDynamicPanelPosition(optimalPosition);
 
@@ -924,7 +941,7 @@ export function GeoMap({
 
       emitSelectionChange({ type: "cluster", cluster });
     },
-    [applyViewState, clusterFocusZoom, emitSelectionChange, resolvedViewState, firstCoordinate],
+    [applyViewState, clusterFocusZoom, emitSelectionChange],
   );
 
   const clearSelection = React.useCallback(() => {
