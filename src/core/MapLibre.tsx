@@ -434,69 +434,64 @@ export function MapLibre({
     return getMapLibreStyleUrl("osm-bright", stadiaApiKey);
   }, [mapStyle, stadiaApiKey, styleUrl]);
 
-  // Detect if we're in an iframe to adjust resize behavior
-  const isInIframe = React.useMemo(() => {
-    if (typeof window === "undefined") return false;
-    try {
-      return window.self !== window.top;
-    } catch {
-      return true; // Blocked by same-origin policy means we're in an iframe
-    }
-  }, []);
+  const containerRef = React.useRef<HTMLDivElement>(null);
 
-  // Enhanced resize handling for iframe contexts
+  // Fix for MapLibre canvas height growth issue
   React.useEffect(() => {
-    if (!isInIframe || !mapRef.current) return;
+    if (!mapRef.current || !containerRef.current) return;
 
-    let lastHeight = 0;
-    let lastWidth = 0;
-    let resizeTimeout: NodeJS.Timeout;
+    // Force the map to respect container bounds
+    const enforceContainerHeight = () => {
+      const container = containerRef.current;
+      const map = mapRef.current;
 
-    const handleResize = (entries: ResizeObserverEntry[]) => {
-      clearTimeout(resizeTimeout);
+      if (!container || !map) return;
 
-      // Get the container dimensions
-      const entry = entries[0];
-      if (!entry) return;
+      // Get the actual container height
+      const rect = container.getBoundingClientRect();
+      const maxHeight = Math.min(rect.height, window.innerHeight);
 
-      const { width, height } = entry.contentRect;
-
-      // Only trigger resize if dimensions actually changed meaningfully
-      const widthChanged = Math.abs(width - lastWidth) > 1;
-      const heightChanged = Math.abs(height - lastHeight) > 1;
-
-      if (widthChanged || heightChanged) {
-        lastWidth = width;
-        lastHeight = height;
-
-        // Debounce the actual map resize
-        resizeTimeout = setTimeout(() => {
-          mapRef.current?.resize();
-        }, 250);
+      // Ensure the map canvas doesn't exceed container
+      const canvas = map.getCanvas();
+      if (canvas && canvas.style.height) {
+        const canvasHeight = parseInt(canvas.style.height);
+        if (canvasHeight > maxHeight || canvasHeight > 2000) {
+          // Force resize to container dimensions
+          map.resize();
+        }
       }
     };
 
-    // Observe the parent container, not the map container itself
-    const parentElement = mapRef.current.getContainer().parentElement;
-    if (parentElement) {
-      const resizeObserver = new ResizeObserver(handleResize);
-      resizeObserver.observe(parentElement);
+    // Check periodically to prevent runaway growth
+    const interval = setInterval(enforceContainerHeight, 1000);
 
-      return () => {
-        clearTimeout(resizeTimeout);
-        resizeObserver.disconnect();
-      };
+    // Also check on any resize events if ResizeObserver is available
+    let resizeObserver: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined") {
+      resizeObserver = new ResizeObserver(() => {
+        enforceContainerHeight();
+      });
+      resizeObserver.observe(containerRef.current);
     }
-  }, [isInIframe]);
+
+    return () => {
+      clearInterval(interval);
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
+    };
+  }, []);
 
   return (
     <div
+      ref={containerRef}
       className={joinClassNames("relative w-full h-full", className)}
       style={{
         width: "100%",
         height: "100%",
-        // Prevent content from pushing container size in iframes
-        ...(isInIframe && { overflow: "hidden", position: "relative" }),
+        maxHeight: "100vh", // Prevent excessive height
+        overflow: "hidden",
+        position: "relative",
         ...style
       }}
     >
@@ -509,7 +504,7 @@ export function MapLibre({
         onMoveEnd={handleMoveEnd}
         onClick={handleMapClick}
         attributionControl={false}
-        trackResize={!isInIframe} // Disable automatic resize tracking in iframes, use manual observer instead
+        trackResize
         dragRotate={false}
         touchZoomRotate={false}
       >
