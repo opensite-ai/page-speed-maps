@@ -918,7 +918,7 @@ export function GeoMap({
       return (
         <div
           className={cn(
-            "relative w-[320px] overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-2xl",
+            "relative w-80 overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-2xl",
             panelClassName,
           )}
         >
@@ -1017,7 +1017,7 @@ export function GeoMap({
       return (
         <div
           className={cn(
-            "relative w-[320px] overflow-hidden rounded-xl border border-border bg-card text-card-foreground p-4 shadow-2xl",
+            "relative w-80 overflow-hidden rounded-xl border border-border bg-card text-card-foreground p-4 shadow-2xl",
             panelClassName,
           )}
         >
