@@ -764,13 +764,31 @@ export function GeoMap({
   // FIX: Update view state when markers/clusters change
   React.useEffect(() => {
     if (!viewState && !defaultViewState) {
-      setUncontrolledViewState({
-        latitude: firstCoordinate.latitude,
-        longitude: firstCoordinate.longitude,
-        zoom: calculatedZoom,
+      setUncontrolledViewState((prev) => {
+        // Only update if values actually changed to prevent infinite loops
+        if (
+          prev.latitude === firstCoordinate.latitude &&
+          prev.longitude === firstCoordinate.longitude &&
+          prev.zoom === calculatedZoom
+        ) {
+          return prev;
+        }
+
+        return {
+          latitude: firstCoordinate.latitude,
+          longitude: firstCoordinate.longitude,
+          zoom: calculatedZoom,
+        };
       });
     }
-  }, [firstCoordinate, calculatedZoom, viewState, defaultViewState]);
+  }, [
+    // Use primitive values instead of objects to avoid reference changes
+    firstCoordinate.latitude,
+    firstCoordinate.longitude,
+    calculatedZoom,
+    viewState,
+    defaultViewState,
+  ]);
 
   const isControlledViewState = viewState !== undefined;
 
@@ -781,7 +799,15 @@ export function GeoMap({
   // Update ref when view state changes
   React.useEffect(() => {
     viewStateRef.current = resolvedViewState || uncontrolledViewState;
-  }, [resolvedViewState, uncontrolledViewState]);
+  }, [
+    // Use primitive values to avoid reference changes
+    resolvedViewState?.latitude,
+    resolvedViewState?.longitude,
+    resolvedViewState?.zoom,
+    uncontrolledViewState.latitude,
+    uncontrolledViewState.longitude,
+    uncontrolledViewState.zoom,
+  ]);
 
   const applyViewState = React.useCallback(
     (nextState: Partial<MapViewState>) => {
@@ -843,7 +869,13 @@ export function GeoMap({
       setSelection({ type: "none" });
       onSelectionChange?.({ type: "none" });
     }
-  }, [onSelectionChange, selectedMarker, selection]);
+  }, [
+    // Use primitive values to avoid object reference issues
+    selection.type,
+    selection.markerId,
+    selectedMarker?.id,
+    onSelectionChange,
+  ]);
 
   const emitSelectionChange = React.useCallback(
     (
